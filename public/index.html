@@ -1,1 +1,20 @@
-
+<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vua Tiếng Việt Online</title>
+<style>body{font-family:system-ui;margin:0;background:#f4f5fb;color:#222}.wrap{max-width:760px;margin:auto;padding:18px}.card{background:#fff;padding:24px;border-radius:20px;box-shadow:0 5px 24px #0001}input{padding:13px;border:1px solid #bbb;border-radius:11px;font-size:17px;width:100%;box-sizing:border-box}button{padding:12px 18px;border:0;border-radius:11px;background:#222;color:#fff;font-size:16px;margin-top:10px}.row{display:flex;gap:10px;flex-wrap:wrap}.hidden{display:none}.tag{display:inline-block;background:#eee;padding:7px 11px;border-radius:99px;margin:3px}.q{font-size:25px;font-weight:700;margin:24px 0}.score{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee}</style>
+<div class=wrap><div class=card>
+<div id=home><h1>🎮 Vua Tiếng Việt Online</h1><p>30 câu • Tiếng Việt • Ẩm thực • Địa lý Việt Nam • Không bóng đá</p><input id=name placeholder="Tên của bạn"><div class=row><button onclick=create()>Tạo phòng</button><button onclick=join()>Vào phòng</button></div><input id=code placeholder="Mã phòng 5 số" style="margin-top:10px"><p id=msg></p></div>
+<div id=lobby class=hidden><h2>Phòng <span id=room></span></h2><p>Gửi mã này cho mọi người.</p><div id=players></div><button id=start onclick=startGame()>Bắt đầu</button></div>
+<div id=game class=hidden><span class=tag id=cat></span><span class=tag id=num></span><span class=tag>⏱️ <b id=time>20</b></span><h2 id=question></h2><input id=ans placeholder="Nhập đáp án..." onkeydown="if(event.key==='Enter')answer()"><button onclick=answer()>Trả lời</button><p id=status></p><hr><div id=scores></div></div>
+<div id=end class=hidden><h1>🏆 Kết quả</h1><div id=final></div></div>
+</div></div><script src="/socket.io/socket.io.js"></script><script>
+const s=io();let host=false,ended=false,deadline;
+function create(){s.emit("createRoom",{name:name.value},r=>{if(!r.ok)return msg.textContent=r.msg;host=true;enter(r.code)})}
+function join(){s.emit("joinRoom",{code:code.value.trim(),name:name.value},r=>{if(!r.ok)return msg.textContent=r.msg;enter(r.code)})}
+function enter(c){home.classList.add("hidden");lobby.classList.remove("hidden");room.textContent=c}
+function startGame(){s.emit("start")}
+s.on("players",ps=>{players.innerHTML=ps.map((p,i)=>`<div class=score><span>${i+1}. ${p.name}${p.host?" 👑":""}</span><b>${p.score}</b></div>`).join("");start.classList.toggle("hidden",!host)})
+s.on("question",x=>{lobby.classList.add("hidden");game.classList.remove("hidden");cat.textContent=x.cat;num.textContent=`Câu ${x.index+1}/${x.total}`;question.textContent=x.q;ans.value="";status.textContent="";deadline=x.endsAt;tick()})
+function tick(){let n=Math.max(0,Math.ceil((deadline-Date.now())/1000));time.textContent=n;if(n)requestAnimationFrame(tick)}
+function answer(){s.emit("answer",{text:ans.value})}
+s.on("answered",x=>{status.textContent=x.name+" đã trả lời đúng!";})
+s.on("finished",ps=>{game.classList.add("hidden");end.classList.remove("hidden");final.innerHTML=ps.map((p,i)=>`<div class=score><span>${i+1}. ${p.name}</span><b>${p.score} điểm</b></div>`).join("")})
+</script></html>
